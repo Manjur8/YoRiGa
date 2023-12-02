@@ -7,6 +7,8 @@ import {
 import { DevtoolsPanel, DevtoolsProvider } from "@refinedev/devtools";
 import { RefineKbar, RefineKbarProvider } from "@refinedev/kbar";
 
+import VillaOutlined from "@mui/icons-material/VillaOutlined";
+
 import {
   ErrorComponent,
   notificationProvider,
@@ -41,7 +43,7 @@ import { Login } from "pages/login";
 import { useTranslation } from "react-i18next";
 import { BrowserRouter, Outlet, Route, Routes } from "react-router-dom";
 import { parseJwt } from "utils/parse-jwt";
-import { Header } from "./components/header";
+// import { Header } from "./components/header";
 import { ColorModeContextProvider } from "./contexts/color-mode";
 
 const axiosInstance = axios.create();
@@ -159,6 +161,7 @@ function App() {
                 authProvider={authProvider}
                 i18nProvider={i18nProvider}
                 resources={[
+                  
                   {
                     name: "blog_posts",
                     list: "/blog-posts",
@@ -168,6 +171,14 @@ function App() {
                     meta: {
                       canDelete: true,
                     },
+                  },
+                  {
+                    name: "properties",
+                    list: "/blog-posts",
+                    // show: PropertyDetails,
+                    // create: CreateProperty,
+                    // edit: EditProperty,
+                    icon: <VillaOutlined />,
                   },
                   {
                     name: "categories",
@@ -195,7 +206,7 @@ function App() {
                         fallback={<CatchAllNavigate to="/login" />}
                       >
                         <ThemedLayoutV2
-                          Header={() => <Header isSticky={true} />}
+                          // Header={() => <Header isSticky={true} />}
                         >
                           <Outlet />
                         </ThemedLayoutV2>

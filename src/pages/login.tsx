@@ -3,10 +3,8 @@ import { useEffect, useRef } from "react";
 
 import Box from "@mui/material/Box";
 import Container from "@mui/material/Container";
-import Typography from "@mui/material/Typography";
-import { ThemedTitleV2 } from "@refinedev/mui";
 
-import { logo, yariga } from '../assets';
+import { yariga } from '../assets';
 
 import { CredentialResponse } from "interfaces/google";
 
@@ -24,7 +22,7 @@ export const Login: React.FC = () => {
       try {
         window.google.accounts.id.initialize({
           ux_mode: "popup",
-          client_id: process.env.GOOGLE_OAUTH_CLIENT_ID,
+          client_id: process.env.REACT_APP_GOOGLE_OAUTH_CLIENT_ID,
           callback: async (res: CredentialResponse) => {
             if (res.credential) {
               login(res);
@@ -61,15 +59,6 @@ export const Login: React.FC = () => {
         alignItems="center"
         flexDirection="column"
       >
-        {/* <ThemedTitleV2
-          collapsed={false}
-          wrapperStyles={{
-            fontSize: "22px",
-            justifyContent: "center",
-          }}
-          icon={logo}
-          text={'Yarliga'}
-        /> */}
         <div>
           <img src={yariga} alt={'yariga logo'} />
         </div>
