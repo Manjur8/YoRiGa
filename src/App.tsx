@@ -1,7 +1,6 @@
 import {
   AuthBindings,
   Authenticated,
-  GitHubBanner,
   Refine,
 } from "@refinedev/core";
 import { DevtoolsPanel, DevtoolsProvider } from "@refinedev/devtools";
@@ -27,24 +26,17 @@ import routerBindings, {
 import dataProvider from "@refinedev/simple-rest";
 import axios, { AxiosRequestConfig } from "axios";
 import { CredentialResponse } from "interfaces/google";
-import {
-  BlogPostCreate,
-  BlogPostEdit,
-  BlogPostList,
-  BlogPostShow,
-} from "pages/blog-posts";
-import {
-  CategoryCreate,
-  CategoryEdit,
-  CategoryList,
-  CategoryShow,
-} from "pages/categories";
+
 import { Login } from "pages/login";
 import { useTranslation } from "react-i18next";
 import { BrowserRouter, Outlet, Route, Routes } from "react-router-dom";
 import { parseJwt } from "utils/parse-jwt";
 // import { Header } from "./components/header";
 import { ColorModeContextProvider } from "./contexts/color-mode";
+import { Agents, AllProperties, Home, Messages, MyProfile, Reviews } from "pages";
+import { AccountCircleOutlined, ChatBubbleOutline, Dashboard, PeopleAltOutlined, StarOutlineRounded } from "@mui/icons-material";
+import { Header, Layout, Sider, Title } from "components/layout";
+import { logo, yariga } from "assets";
 
 const axiosInstance = axios.create();
 axiosInstance.interceptors.request.use((request: AxiosRequestConfig) => {
@@ -80,7 +72,7 @@ function App() {
 
         return {
           success: true,
-          redirectTo: "/",
+          redirectTo: "/dashboard",
         };
       }
 
@@ -147,7 +139,6 @@ function App() {
 
   return (
     <BrowserRouter>
-      <GitHubBanner />
       <RefineKbarProvider>
         <ColorModeContextProvider>
           <CssBaseline />
@@ -161,35 +152,41 @@ function App() {
                 authProvider={authProvider}
                 i18nProvider={i18nProvider}
                 resources={[
-                  
                   {
-                    name: "blog_posts",
-                    list: "/blog-posts",
-                    create: "/blog-posts/create",
-                    edit: "/blog-posts/edit/:id",
-                    show: "/blog-posts/show/:id",
-                    meta: {
-                      canDelete: true,
-                    },
+                    name: "dashboard",
+                    list: "/dashboard",
+                    icon: <Dashboard />
                   },
                   {
                     name: "properties",
-                    list: "/blog-posts",
-                    // show: PropertyDetails,
+                    list: "/properties",
+                    // show: AllProperties,
                     // create: CreateProperty,
                     // edit: EditProperty,
                     icon: <VillaOutlined />,
                   },
                   {
-                    name: "categories",
-                    list: "/categories",
-                    create: "/categories/create",
-                    edit: "/categories/edit/:id",
-                    show: "/categories/show/:id",
-                    meta: {
-                      canDelete: true,
-                    },
+                    name: "agents",
+                    list: '/agents',
+                    // show: AgentProfile,
+                    icon: <PeopleAltOutlined />,
                   },
+                  {
+                      name: "reviews",
+                      list: '/reviews',
+                      icon: <StarOutlineRounded />,
+                  },
+                  {
+                      name: "messages",
+                      list: '/messages',
+                      icon: <ChatBubbleOutline />,
+                  },
+                  {
+                      name: "my-profile",
+                      options: { label: "My Profile " },
+                      list: '/my-profile',
+                      icon: <AccountCircleOutlined />,
+                  }
                 ]}
                 options={{
                   syncWithLocation: true,
@@ -206,7 +203,13 @@ function App() {
                         fallback={<CatchAllNavigate to="/login" />}
                       >
                         <ThemedLayoutV2
-                          // Header={() => <Header isSticky={true} />}
+                          // Header={() => <ThemedHeaderV2 isSticky={true} />}
+                          // Title={() => <ThemedTitleV2 icon={logo} />}
+                          // Title={Title}
+                          
+                Sider={Sider}
+                    // Layout={Layout}
+                    // Header={Header}
                         >
                           <Outlet />
                         </ThemedLayoutV2>
@@ -217,17 +220,35 @@ function App() {
                       index
                       element={<NavigateToResource resource="blog_posts" />}
                     />
-                    <Route path="/blog-posts">
+                    {/* <Route path="/blog-posts">
                       <Route index element={<BlogPostList />} />
                       <Route path="create" element={<BlogPostCreate />} />
                       <Route path="edit/:id" element={<BlogPostEdit />} />
                       <Route path="show/:id" element={<BlogPostShow />} />
-                    </Route>
-                    <Route path="/categories">
+                    </Route> */}
+                    {/* <Route path="/categories">
                       <Route index element={<CategoryList />} />
                       <Route path="create" element={<CategoryCreate />} />
                       <Route path="edit/:id" element={<CategoryEdit />} />
                       <Route path="show/:id" element={<CategoryShow />} />
+                    </Route> */}
+                    <Route path="/dashboard">
+                      <Route index element={<Home />} />
+                    </Route>
+                    <Route path="/properties">
+                      <Route index element={<AllProperties />} />
+                    </Route>
+                    <Route path="/agents">
+                      <Route index element={<Agents />} />
+                    </Route>
+                    <Route path="/reviews">
+                      <Route index element={<Reviews />} />
+                    </Route>
+                    <Route path="/messages">
+                      <Route index element={<Messages />} />
+                    </Route>
+                    <Route path="/my-profile">
+                      <Route index element={<MyProfile />} />
                     </Route>
                     <Route path="*" element={<ErrorComponent />} />
                   </Route>
@@ -249,7 +270,7 @@ function App() {
                 <UnsavedChangesNotifier />
                 <DocumentTitleHandler />
               </Refine>
-              <DevtoolsPanel />
+              {/* <DevtoolsPanel /> */}
             </DevtoolsProvider>
           </RefineSnackbarProvider>
         </ColorModeContextProvider>

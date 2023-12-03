@@ -1,25 +1,23 @@
-import React, { useState } from "react";
-import { Sider as DefaultSider } from "@refinedev/mui";
+import React, { CSSProperties, useState } from "react";
 
 import Box from "@mui/material/Box";
 import Drawer from "@mui/material/Drawer";
+import List from "@mui/material/List";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import Collapse from "@mui/material/Collapse";
 import Tooltip from "@mui/material/Tooltip";
-import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
+import Paper from "@mui/material/Paper";
 
-import MuiList from "@mui/material/List";
 import ListOutlined from "@mui/icons-material/ListOutlined";
 import Logout from "@mui/icons-material/Logout";
 import ExpandLess from "@mui/icons-material/ExpandLess";
 import ExpandMore from "@mui/icons-material/ExpandMore";
 import ChevronLeft from "@mui/icons-material/ChevronLeft";
-import ChevronRight from "@mui/icons-material/ChevronRight";
-import MenuRounded from "@mui/icons-material/MenuRounded";
 import Dashboard from "@mui/icons-material/Dashboard";
+
 import {
     CanAccess,
     ITreeMenu,
@@ -28,38 +26,63 @@ import {
     useTitle,
     useTranslate,
     useRouterContext,
+    useRouterType,
+    useLink,
     useMenu,
     useRefineContext,
+    useActiveAuthProvider,
+    pickNotDeprecated,
+    useWarnAboutChange,
 } from "@refinedev/core";
+import { RefineThemedLayoutV2SiderProps } from "@refinedev/mui";
 
-import { Title as DefaultTitle } from "../title";
+import { ThemedTitleV2 as DefaultTitle } from "./default-title";
+import { useThemedLayoutContext } from "@refinedev/mui";
 
-export const Sider: typeof DefaultSider = ({ render }) => {
-    const [collapsed, setCollapsed] = useState(false);
-    const [opened, setOpened] = useState(false);
+export const Sider: React.FC<RefineThemedLayoutV2SiderProps> = ({
+    Title: TitleFromProps,
+    render,
+    meta,
+    activeItemDisabled = false,
+}) => {
+    const {
+        siderCollapsed,
+        setSiderCollapsed,
+        mobileSiderOpen,
+        setMobileSiderOpen,
+    } = useThemedLayoutContext();
 
     const drawerWidth = () => {
-        if (collapsed) return 64;
-        return 200;
+        if (siderCollapsed) return 56;
+        return 240;
     };
 
     const t = useTranslate();
-    const { Link } = useRouterContext();
+    const routerType = useRouterType();
+    const Link = useLink();
+    const { Link: LegacyLink } = useRouterContext();
+    const ActiveLink = routerType === "legacy" ? LegacyLink : Link;
     const { hasDashboard } = useRefineContext();
     const translate = useTranslate();
 
-    const { menuItems, selectedKey, defaultOpenKeys } = useMenu();
+    const { menuItems, selectedKey, defaultOpenKeys } = useMenu({ meta });
     const isExistAuthentication = useIsExistAuthentication();
+    const TitleFromContext = useTitle();
+    const authProvider = useActiveAuthProvider();
+    const { warnWhen, setWarnWhen } = useWarnAboutChange();
     const { mutate: mutateLogout } = useLogout({
-        v3LegacyAuthProviderCompatible: true,
+        v3LegacyAuthProviderCompatible: Boolean(authProvider?.isLegacy),
     });
-    const Title = useTitle();
 
     const [open, setOpen] = useState<{ [k: string]: any }>({});
 
     React.useEffect(() => {
-        setOpen((previousOpen) => {
-            const previousOpenKeys: string[] = Object.keys(previousOpen);
+        setOpen((previous) => {
+            const previousKeys: string[] = Object.keys(previous);
+            const previousOpenKeys = previousKeys.filter(
+                (key) => previous[key],
+            );
+
             const uniqueKeys = new Set([
                 ...previousOpenKeys,
                 ...defaultOpenKeys,
@@ -71,64 +94,76 @@ export const Sider: typeof DefaultSider = ({ render }) => {
         });
     }, [defaultOpenKeys]);
 
-    const RenderToTitle = Title ?? DefaultTitle;
+    const RenderToTitle = TitleFromProps ?? TitleFromContext ?? DefaultTitle;
+    console.log(DefaultTitle)
 
     const handleClick = (key: string) => {
         setOpen({ ...open, [key]: !open[key] });
     };
 
-    const renderTreeView = (tree: ITreeMenu[], selectedKey: string) => {
+    const renderTreeView = (tree: ITreeMenu[], selectedKey?: string) => {
         return tree.map((item: ITreeMenu) => {
-            const { icon, label, route, name, children, parentName } = item;
-            const isOpen = open[route || ""] || false;
+            const {
+                icon,
+                label,
+                route,
+                name,
+                children,
+                parentName,
+                meta,
+                options,
+            } = item;
+            const isOpen = open[item.key || ""] || false;
 
-            const isSelected = route === selectedKey;
-            const isNested = !(parentName === undefined);
+            const isSelected = item.key === selectedKey;
+            const isNested = !(
+                pickNotDeprecated(meta?.parent, options?.parent, parentName) ===
+                undefined
+            );
 
             if (children.length > 0) {
                 return (
                     <CanAccess
-                        key={route}
+                        key={item.key}
                         resource={name.toLowerCase()}
                         action="list"
                         params={{
                             resource: item,
                         }}
                     >
-                        <div key={route}>
+                        <div key={item.key}>
                             <Tooltip
                                 title={label ?? name}
                                 placement="right"
-                                disableHoverListener={!collapsed}
+                                disableHoverListener={!siderCollapsed}
                                 arrow
                             >
                                 <ListItemButton
                                     onClick={() => {
-                                        if (collapsed) {
-                                            setCollapsed(false);
+                                        if (siderCollapsed) {
+                                            setSiderCollapsed(false);
                                             if (!isOpen) {
-                                                handleClick(route || "");
+                                                handleClick(item.key || "");
                                             }
                                         } else {
-                                            handleClick(route || "");
+                                            handleClick(item.key || "");
                                         }
                                     }}
                                     sx={{
                                         pl: isNested ? 4 : 2,
                                         justifyContent: "center",
-                                        "&.Mui-selected": {
-                                            "&:hover": {
-                                                backgroundColor: "transparent",
-                                            },
-                                            backgroundColor: "transparent",
-                                        },
+                                        marginTop: "8px",
                                     }}
                                 >
                                     <ListItemIcon
                                         sx={{
                                             justifyContent: "center",
-                                            minWidth: 36,
-                                            color: "primary.contrastText",
+                                            minWidth: "24px",
+                                            transition: "margin-right 0.3s",
+                                            marginRight: siderCollapsed
+                                                ? "0px"
+                                                : "12px",
+                                            color: "currentColor",
                                         }}
                                     >
                                         {icon ?? <ListOutlined />}
@@ -137,29 +172,33 @@ export const Sider: typeof DefaultSider = ({ render }) => {
                                         primary={label}
                                         primaryTypographyProps={{
                                             noWrap: true,
-                                            fontSize: "16px",
-                                            fontWeight: isSelected
-                                                ? "bold"
-                                                : "normal",
+                                            fontSize: "14px",
                                         }}
                                     />
-                                    {!collapsed &&
-                                        (isOpen ? (
-                                            <ExpandLess />
-                                        ) : (
-                                            <ExpandMore />
-                                        ))}
+                                    {isOpen ? (
+                                        <ExpandLess
+                                            sx={{
+                                                color: "text.icon",
+                                            }}
+                                        />
+                                    ) : (
+                                        <ExpandMore
+                                            sx={{
+                                                color: "text.icon",
+                                            }}
+                                        />
+                                    )}
                                 </ListItemButton>
                             </Tooltip>
-                            {!collapsed && (
+                            {!siderCollapsed && (
                                 <Collapse
-                                    in={open[route || ""]}
+                                    in={open[item.key || ""]}
                                     timeout="auto"
                                     unmountOnExit
                                 >
-                                    <MuiList component="div" disablePadding>
+                                    <List component="div" disablePadding>
                                         {renderTreeView(children, selectedKey)}
-                                    </MuiList>
+                                    </List>
                                 </Collapse>
                             )}
                         </div>
@@ -167,9 +206,14 @@ export const Sider: typeof DefaultSider = ({ render }) => {
                 );
             }
 
+            const linkStyle: CSSProperties =
+                activeItemDisabled && isSelected
+                    ? { pointerEvents: "none" }
+                    : {};
+
             return (
                 <CanAccess
-                    key={route}
+                    key={item.key}
                     resource={name.toLowerCase()}
                     action="list"
                     params={{ resource: item }}
@@ -177,41 +221,35 @@ export const Sider: typeof DefaultSider = ({ render }) => {
                     <Tooltip
                         title={label ?? name}
                         placement="right"
-                        disableHoverListener={!collapsed}
+                        disableHoverListener={!siderCollapsed}
                         arrow
                     >
                         <ListItemButton
-                            component={Link}
+                            component={ActiveLink}
                             to={route}
                             selected={isSelected}
+                            style={linkStyle}
                             onClick={() => {
-                                setOpened(false);
+                                setMobileSiderOpen(false);
                             }}
                             sx={{
                                 pl: isNested ? 4 : 2,
                                 py: isNested ? 1.25 : 1,
-                                "&.Mui-selected": {
-                                    "&:hover": {
-                                        backgroundColor: isSelected
-                                            ? "#1e36e8"
-                                            : "transparent",
-                                    },
-                                    backgroundColor: isSelected
-                                        ? "#475be8"
-                                        : "transparent",
-                                },
                                 justifyContent: "center",
-                                margin: "10px auto",
-                                borderRadius: "12px",
-                                minHeight: "56px",
-                                width: "90%",
+                                color: isSelected
+                                    ? "primary.main"
+                                    : "text.primary",
                             }}
                         >
                             <ListItemIcon
                                 sx={{
                                     justifyContent: "center",
-                                    minWidth: 36,
-                                    color: isSelected ? "#fff" : "#808191",
+                                    transition: "margin-right 0.3s",
+                                    marginRight: siderCollapsed
+                                        ? "0px"
+                                        : "12px",
+                                    minWidth: "24px",
+                                    color: "currentColor",
                                 }}
                             >
                                 {icon ?? <ListOutlined />}
@@ -220,10 +258,7 @@ export const Sider: typeof DefaultSider = ({ render }) => {
                                 primary={label}
                                 primaryTypographyProps={{
                                     noWrap: true,
-                                    fontSize: "16px",
-                                    fontWeight: isSelected ? "bold" : "normal",
-                                    color: isSelected ? "#fff" : "#808191",
-                                    marginLeft: "10px",
+                                    fontSize: "14px",
                                 }}
                             />
                         </ListItemButton>
@@ -238,35 +273,34 @@ export const Sider: typeof DefaultSider = ({ render }) => {
             <Tooltip
                 title={translate("dashboard.title", "Dashboard")}
                 placement="right"
-                disableHoverListener={!collapsed}
+                disableHoverListener={!siderCollapsed}
                 arrow
             >
                 <ListItemButton
-                    component={Link}
+                    component={ActiveLink}
                     to="/"
                     selected={selectedKey === "/"}
                     onClick={() => {
-                        setOpened(false);
+                        setMobileSiderOpen(false);
                     }}
                     sx={{
                         pl: 2,
                         py: 1,
-                        "&.Mui-selected": {
-                            "&:hover": {
-                                backgroundColor: "transparent",
-                            },
-                            backgroundColor: "transparent",
-                        },
                         justifyContent: "center",
+                        color:
+                            selectedKey === "/"
+                                ? "primary.main"
+                                : "text.primary",
                     }}
                 >
                     <ListItemIcon
                         sx={{
                             justifyContent: "center",
-                            minWidth: 36,
-                            color: "#808191",
-                            marginLeft: "6px",
-                            marginRight: "14px",
+                            minWidth: "24px",
+                            transition: "margin-right 0.3s",
+                            marginRight: siderCollapsed ? "0px" : "12px",
+                            color: "currentColor",
+                            fontSize: "14px",
                         }}
                     >
                         <Dashboard />
@@ -275,8 +309,7 @@ export const Sider: typeof DefaultSider = ({ render }) => {
                         primary={translate("dashboard.title", "Dashboard")}
                         primaryTypographyProps={{
                             noWrap: true,
-                            fontSize: "16px",
-                            fontWeight: selectedKey === "/" ? "bold" : "normal",
+                            fontSize: "14px",
                         }}
                     />
                 </ListItemButton>
@@ -284,29 +317,45 @@ export const Sider: typeof DefaultSider = ({ render }) => {
         </CanAccess>
     ) : null;
 
+    const handleLogout = () => {
+        if (warnWhen) {
+            const confirm = window.confirm(
+                t(
+                    "warnWhenUnsavedChanges",
+                    "Are you sure you want to leave? You have unsaved changes.",
+                ),
+            );
+
+            if (confirm) {
+                setWarnWhen(false);
+                mutateLogout();
+            }
+        } else {
+            mutateLogout();
+        }
+    };
+
     const logout = isExistAuthentication && (
         <Tooltip
             title={t("buttons.logout", "Logout")}
             placement="right"
-            disableHoverListener={!collapsed}
+            disableHoverListener={!siderCollapsed}
             arrow
         >
             <ListItemButton
                 key="logout"
-                onClick={() => mutateLogout()}
+                onClick={() => handleLogout()}
                 sx={{
                     justifyContent: "center",
-                    margin: "10px auto",
-                    borderRadius: "12px",
-                    minHeight: "56px",
-                    width: "90%",
                 }}
             >
                 <ListItemIcon
                     sx={{
                         justifyContent: "center",
-                        minWidth: 36,
-                        color: "#808191",
+                        minWidth: "24px",
+                        transition: "margin-right 0.3s",
+                        marginRight: siderCollapsed ? "0px" : "12px",
+                        color: "currentColor",
                     }}
                 >
                     <Logout />
@@ -315,7 +364,7 @@ export const Sider: typeof DefaultSider = ({ render }) => {
                     primary={t("buttons.logout", "Logout")}
                     primaryTypographyProps={{
                         noWrap: true,
-                        fontSize: "16px",
+                        fontSize: "14px",
                     }}
                 />
             </ListItemButton>
@@ -330,7 +379,7 @@ export const Sider: typeof DefaultSider = ({ render }) => {
                 dashboard,
                 logout,
                 items,
-                collapsed,
+                collapsed: siderCollapsed,
             });
         }
         return (
@@ -343,9 +392,15 @@ export const Sider: typeof DefaultSider = ({ render }) => {
     };
 
     const drawer = (
-        <MuiList disablePadding sx={{ mt: 1, color: "#808191" }}>
+        <List
+            disablePadding
+            sx={{
+                flexGrow: 1,
+                paddingTop: "16px",
+            }}
+        >
             {renderSider()}
-        </MuiList>
+        </List>
     );
 
     return (
@@ -371,39 +426,44 @@ export const Sider: typeof DefaultSider = ({ render }) => {
             >
                 <Drawer
                     variant="temporary"
-                    open={opened}
-                    onClose={() => setOpened(false)}
+                    elevation={2}
+                    open={mobileSiderOpen}
+                    onClose={() => setMobileSiderOpen(false)}
                     ModalProps={{
                         keepMounted: true, // Better open performance on mobile.
                     }}
                     sx={{
-                        display: { sm: "block", md: "none" },
-                        "& .MuiDrawer-paper": {
-                            width: 256,
-                            bgcolor: "#FCFCFC",
+                        display: {
+                            sm: "block",
+                            md: "none",
                         },
                     }}
                 >
                     <Box
                         sx={{
-                            height: 64,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
+                            width: drawerWidth(),
                         }}
                     >
-                        <RenderToTitle collapsed={false} />
+                        <Box
+                            sx={{
+                                height: 64,
+                                display: "flex",
+                                alignItems: "center",
+                                paddingLeft: "16px",
+                                fontSize: "14px",
+                            }}
+                        >
+                            <RenderToTitle collapsed={false} />
+                        </Box>
+                        {drawer}
                     </Box>
-                    {drawer}
                 </Drawer>
                 <Drawer
                     variant="permanent"
-                    PaperProps={{ elevation: 0 }}
                     sx={{
                         display: { xs: "none", md: "block" },
                         "& .MuiDrawer-paper": {
-                            width: drawerWidth,
-                            bgcolor: "#FCFCFC",
+                            width: drawerWidth(),
                             overflow: "hidden",
                             transition:
                                 "width 200ms cubic-bezier(0.4, 0, 0.6, 1) 0ms",
@@ -411,16 +471,36 @@ export const Sider: typeof DefaultSider = ({ render }) => {
                     }}
                     open
                 >
-                    <Box
+                    <Paper
+                        elevation={0}
                         sx={{
+                            fontSize: "14px",
+                            width: "100%",
                             height: 64,
                             display: "flex",
+                            flexShrink: 0,
                             alignItems: "center",
-                            justifyContent: "center",
+                            justifyContent: siderCollapsed
+                                ? "center"
+                                : "space-between",
+                            paddingLeft: siderCollapsed ? 0 : "16px",
+                            paddingRight: siderCollapsed ? 0 : "8px",
+                            variant: "outlined",
+                            borderRadius: 0,
+                            borderBottom: (theme) =>
+                                `1px solid ${theme.palette.action.focus}`,
                         }}
                     >
-                        <RenderToTitle collapsed={collapsed} />
-                    </Box>
+                        <RenderToTitle collapsed={siderCollapsed} />
+                        {!siderCollapsed && (
+                            <IconButton
+                                size="small"
+                                onClick={() => setSiderCollapsed(true)}
+                            >
+                                {<ChevronLeft />}
+                            </IconButton>
+                        )}
+                    </Paper>
                     <Box
                         sx={{
                             flexGrow: 1,
@@ -430,43 +510,7 @@ export const Sider: typeof DefaultSider = ({ render }) => {
                     >
                         {drawer}
                     </Box>
-                    <Button
-                        sx={{
-                            background: "#475BE8",
-                            color: "primary.contrastText",
-                            textAlign: "center",
-                            borderRadius: 0,
-                            borderTop: "1px solid #ffffff1a",
-                            "&:hover": {
-                                background: "#1e36e8",
-                            },
-                        }}
-                        fullWidth
-                        size="large"
-                        onClick={() => setCollapsed((prev) => !prev)}
-                    >
-                        {collapsed ? <ChevronRight /> : <ChevronLeft />}
-                    </Button>
                 </Drawer>
-                <Box
-                    sx={{
-                        display: { xs: "block", md: "none" },
-                        position: "fixed",
-                        top: "64px",
-                        left: "0px",
-                        borderRadius: "0 6px 6px 0",
-                        bgcolor: "#475be8",
-                        zIndex: 1199,
-                        width: "36px",
-                    }}
-                >
-                    <IconButton
-                        sx={{ color: "#fff", width: "36px" }}
-                        onClick={() => setOpened((prev) => !prev)}
-                    >
-                        <MenuRounded />
-                    </IconButton>
-                </Box>
             </Box>
         </>
     );
