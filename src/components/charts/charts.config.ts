@@ -1,4 +1,5 @@
 import { ApexOptions } from 'apexcharts';
+import { white } from '../../constants';
 
 export const TotalRevenueSeries = [
   {
@@ -50,12 +51,19 @@ export const TotalRevenueOptions: ApexOptions = {
   legend: {
     position: 'top',
     horizontalAlign: 'right',
+    fontSize: '13px',
+    labels: {
+      colors: white,
+      useSeriesColors: false
+  }
   },
   tooltip: {
     y: {
       formatter(val: number) {
-        return `$ ${val} thousands`;
+        return `$${val} thousands`;
       },
     },
+    fillSeriesColor: true,
+    theme: 'dark'
   },
 };

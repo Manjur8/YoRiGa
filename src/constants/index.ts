@@ -25,3 +25,8 @@ export const propertyReferralsInfo = [
       color: '#F45252',
     },
   ];
+
+  export const black = '#222831';
+  export const gray = '#393e46';
+  export const orange = '#f96d00';
+  export const white = '#f2f2f2';
